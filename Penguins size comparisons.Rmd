@@ -73,3 +73,83 @@ Are male chinstrap penhiuns significantly larger (body mass) than female chinstr
 t.test(chinstraps_m,chinstraps_f, alternative = "greater")
 ```
 
+## one-way ANOVA
+
+## 1.  table of counts by species and sex
+```{r}
+penguins_counts <- penguins %>% 
+  count(species,sex)
+penguins_counts
+```
+
+create a subset of only female penguins 
+```{r}
+penguins_f <- penguins %>% 
+filter(sex== "female")
+
+ggplot(data= penguins_f, aes(x= flipper_length_mm)) +
+  geom_histogram(aes(fill=species))+
+  facet_wrap(~species, scales= "free")
+
+ggplot(data= penguins_f, aes(sample= flipper_length_mm)) +
+  geom_qq(aes(color=species))+
+  facet_wrap(~species, scales= "free")
+```
+
+### summary statistics 
+Starting from penguins f, crete a summary tabe athe groups by specis, and returens the following:
+-mean of lipper length
+-sd""
+-sample size
+-variance'var'
+-standard error= sd/squrt(n)
+
+```{r}
+penguin_f_summary <-penguins_f %>% 
+  group_by(species) %>% 
+  summarize(
+    mean_flipper_length= mean(flipper_length_mm),
+    sd_flipper_length =sd(flipper_length_mm),
+    sample_size= n(),
+    se_flipper_length = sd(flipper_length_mm)/sqrt(n()),
+    var_flipper_length = var(flipper_length_mm)
+    
+  )
+
+leveneTest(flipper_length_mm ~ species, data= penguins_f)
+```
+### Beeswarm plot with mean +- 1sd
+
+```{r}
+ggplot() +
+  geom_beeswarm(data=penguins_f, 
+                aes (x=species, y=flipper_length_mm),
+                color= "gray70",
+                size=3,
+                alpha=.5) +
+  geom_point(data= penguin_f_summary, aes(x=species, y= mean_flipper_length),
+             size=4)+
+  geom_errorbar(data= penguin_f_summary,
+                aes(x=species,
+                    ymax=mean_flipper_length +sd_flipper_length,
+                    ymin= mean_flipper_length - sd_flipper_length),
+                width=.1) +
+  theme_light()
+```
+
+## ONe-way ANOVA
+
+```{r}
+penguin_aov <- aov(flipper_length_mm ~species, data= penguins_f)
+summary(penguin_aov)
+
+TukeyHSD(penguin_aov)
+```
+
+Type III Anova with the car package:
+```{r}
+penguin_lm <- lm(flipper_length_mm~ species, data= penguins_f)
+penguin_aov_t3 <- Anova(penguin_lm, type = "III")
+penguin_aov_t3
+```
+
